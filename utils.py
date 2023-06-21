@@ -28,13 +28,26 @@ def hexagonal_grid_in_circle(spacing: float, radius: float) -> np.ndarray:
 
 
 class Geometry:
-    def __init__(self, spacing: float, radius: float, jitter=None):
-        self._spacing = spacing
-        self.xy = hexagonal_grid_in_circle(spacing, radius)
+    @classmethod
+    def create(cls, spacing: float, radius: float, jitter=None):
+        xy = hexagonal_grid_in_circle(spacing, radius)
         if jitter:
-            self.xy += np.random.multivariate_normal(
-                np.zeros(2), jitter**2 * np.eye(2), size=self.xy.shape[0]
+            xy += np.random.multivariate_normal(
+                np.zeros(2), jitter**2 * np.eye(2), size=xy.shape[0]
             )
+        return cls(xy, spacing)
+
+    @classmethod
+    def load(cls, fname: str):
+        with np.load(fname) as f:
+            return cls(f["xy"], f["spacing"])
+
+    def dump(self, fname: str):
+        np.savez(fname, xy=self.xy, spacing=self._spacing)
+
+    def __init__(self, xy: np.ndarray, spacing: float):
+        self.xy = xy
+        self._spacing = spacing
 
         x = np.max(self.xy[:, 0])
         scale = (x - self._spacing / 2) / x
